@@ -2,7 +2,8 @@
 
 members = [
 	"query-bpf",
-	"hello-world"
+	"hello-world",
+	"hello_maps"
 ]
 
 [workspace.dependencies]

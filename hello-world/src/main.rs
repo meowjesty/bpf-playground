@@ -66,6 +66,10 @@ fn main() {
     // To see the logs, run:
     //
     // `sudo cat /sys/kernel/debug/tracing/trace_pipe`
+    //
+    // This is the simplest solution to communicating what's going on the bpf program, it's not a
+    // good thing though, as if you have multiple bpf programs logging stuff, they'll all be using
+    // the same file as output.
     loop {
         log::info!("...");
         sleep(Duration::from_secs(1));
