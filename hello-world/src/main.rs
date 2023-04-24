@@ -1,11 +1,4 @@
-use std::{
-    fs::{self, File},
-    io::{Read, Seek, SeekFrom},
-    path::{self, Path, PathBuf},
-    process::exit,
-    sync::mpsc::{self, Receiver, Sender},
-    time::Duration,
-};
+use std::{process::exit, thread::sleep, time::Duration};
 
 use libbpf_rs::PrintLevel;
 use nix::unistd::Uid;
@@ -21,7 +14,6 @@ mod hello_world {
 ///
 /// In this case, it generates `HelloWorldSkelBuilder`
 use hello_world::*;
-use notify::{PollWatcher, Watcher};
 
 fn print_based_on_log(level: PrintLevel, msg: String) {
     match level {
@@ -74,47 +66,8 @@ fn main() {
     // To see the logs, run:
     //
     // `sudo cat /sys/kernel/debug/tracing/trace_pipe`
-    let path = Path::new("/sys/kernel/debug/tracing/trace_pipe");
-    watch_file(&path);
-}
-
-struct TracePipeFileEvent {
-    file_path: PathBuf,
-    tx: Sender<String>,
-}
-
-impl notify::EventHandler for TracePipeFileEvent {
-    fn handle_event(&mut self, event: notify::Result<notify::Event>) {
-        if let Ok(event) = event {
-            log::trace!("Event: {:?}", event);
-
-            if let notify::EventKind::Modify(_) = event.kind {
-                let contents = fs::read_to_string(&self.file_path).unwrap();
-                self.tx.send(contents).unwrap();
-            }
-        }
-    }
-}
-
-fn watch_file(path: &Path) {
-    let (tx, rx) = mpsc::channel();
-
-    let mut watcher = PollWatcher::new(
-        TracePipeFileEvent {
-            tx,
-            file_path: PathBuf::from(path),
-        },
-        notify::Config::default()
-            .with_poll_interval(Duration::from_secs(2))
-            .with_compare_contents(true),
-    )
-    .unwrap();
-
-    watcher
-        .watch(path, notify::RecursiveMode::NonRecursive)
-        .unwrap();
-
     loop {
-        log::info!("Trace: {:?}", rx.recv().unwrap());
+        log::info!("...");
+        sleep(Duration::from_secs(1));
     }
 }
