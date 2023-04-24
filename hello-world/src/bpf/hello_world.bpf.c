@@ -5,7 +5,8 @@
 /// `cannot call GPL-restricted function from non-GPL compatible program`
 ///
 /// I expect this is required for some functions, but not others.
-char LICENSE[] SEC("license") = "Dual BSD/GPL";
+SEC("license") 
+char LICENSE[] = "Dual BSD/GPL";
 
 /// You must include the "linux/bpf.h" header, which contains a bunch of the functions plus type 
 /// declarations.
