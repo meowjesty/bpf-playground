@@ -36,11 +36,12 @@
 //! 	BPF_MAP_TYPE_USER_RINGBUF,
 //! };
 //!```
+use plain::Plain;
 ///
 /// Details can also be seen in the [kernel maps page](https://docs.kernel.org/bpf/maps.html).
-use std::{process::exit, thread::sleep, time::Duration};
+use std::{process::exit, ptr, thread::sleep, time::Duration};
 
-use libbpf_rs::PrintLevel;
+use libbpf_rs::{MapFlags, PrintLevel};
 use nix::unistd::Uid;
 
 mod hello_maps {
@@ -54,6 +55,20 @@ fn print_based_on_log(level: PrintLevel, msg: String) {
         PrintLevel::Debug => log::debug!("{}", msg),
         PrintLevel::Info => log::info!("{}", msg),
         PrintLevel::Warn => log::warn!("{}", msg),
+    }
+}
+
+#[repr(C)]
+#[derive(Default, Debug)]
+struct HashElement {
+    counter: u64,
+}
+
+unsafe impl Plain for HashElement {}
+
+impl HashElement {
+    fn from_bytes(bytes: &[u8]) -> &Self {
+        plain::from_bytes(bytes).expect("Invalid buffer!")
     }
 }
 
@@ -75,11 +90,42 @@ fn main() {
     let mut skel = open.load().unwrap();
     let _attached = skel.attach().unwrap();
 
+    let key_size = skel.maps().global_hash_map().key_size();
+    let map_info = skel.maps().global_hash_map().info();
+    log::debug!("key size {key_size:#?} | map info {map_info:#?}");
+
     loop {
         log::info!("...");
 
-        for key in skel.maps().global_hash_map().keys() {
-            log::info!("key: {key:#?}");
+        {
+            // The `libbpf-sys` crate also outputs the double `1000`.
+            let fd = skel.maps().global_hash_map().fd();
+            let mut next_key = vec![0; 8];
+            unsafe {
+                let result =
+                    libbpf_sys::bpf_map_get_next_key(fd, ptr::null(), next_key.as_mut_ptr() as _);
+
+                log::info!("result next key {result:#} key is {next_key:?}");
+            }
+        }
+
+        for key_bytes in skel.maps().global_hash_map().keys() {
+            // TODO(alex) [high] 2023-04-30: For some reason, we get `1000, 1000`, instead of only
+            // `1000`, which turns our key value into a huge number.
+            let key: &u64 = plain::from_bytes(&key_bytes).expect("Invalid buffer!");
+
+            let value_bytes = skel
+                .maps()
+                .global_hash_map()
+                .lookup(&key_bytes, MapFlags::ANY)
+                .expect("Failed lookup!");
+
+            let value: Option<&HashElement> = value_bytes
+                .as_ref()
+                .map(|bytes| HashElement::from_bytes(bytes));
+
+            log::info!("raw key: {key_bytes:04x?} | value_bytes: {value_bytes:?}");
+            log::info!("ID (key): {key:#?} | value: {value:#?}");
         }
         sleep(Duration::from_secs(1));
     }

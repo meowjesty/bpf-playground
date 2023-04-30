@@ -64,10 +64,14 @@ int hello(void *ctx) {
   }
 
   counter += 1;
+  bpf_printk("key: %d | value: %d", uid, counter);
 
   HashElement updated = { .counter = counter };
   // Upserts the `Map` by checking `Key`
   bpf_map_update_elem(&global_hash_map, &uid, &updated, BPF_ANY);
+
+  // __u64 debug_uid = 1000;
+  // bpf_map_update_elem(&global_hash_map, &debug_uid, &updated, BPF_ANY);
 
   return 0;
 }

@@ -7,9 +7,11 @@ edition = "2021"
 
 [dependencies]
 libbpf-rs.workspace = true
+libbpf-sys.workspace = true
 nix.workspace = true
 log.workspace = true
 env_logger.workspace = true
+plain.workspace = true
 
 [build-dependencies]
 libbpf-cargo.workspace = true

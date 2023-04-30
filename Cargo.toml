@@ -8,7 +8,9 @@ members = [
 
 [workspace.dependencies]
 libbpf-rs = "*"
+libbpf-sys = "*"
 nix = { version = "0.26", default-features = false, features = ["net", "user"] }
 libbpf-cargo = "*"
 log = "*"
 env_logger = "*"
+plain = "*"
