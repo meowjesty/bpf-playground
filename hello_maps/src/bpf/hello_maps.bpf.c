@@ -45,6 +45,28 @@ typedef struct {
   __type(value, HashElement);
 } HashMap;
 
+/// With this struct we can pass data from the `iterator_fn` by accessing `CallbackContext` fields.
+///
+/// In this case we use the `output` field to return the current key.
+typedef struct {
+  void* context;
+  __u64 output;
+} CallbackContext;
+
+/// Iterator callback function called in each iteration of `bpf_for_each_map_elem`.
+///
+/// Can be used to act as a filter (not just straight on iteration of each element), as we can
+/// decide when iteration stops by return `1` (indicates end of map).
+static __u64 iterator_fn(HashMap *map, __u64 *key, HashElement *element, CallbackContext *context) {
+  if (element) {
+    bpf_printk("key: %llu | value: %llu", *key, element->counter);
+    context->output = *key;
+    return 0; // Continues to the next element.
+  } else {
+    return 1; // Skips the rest of the elements.
+  }
+
+}
 
 /// Section for `Map` types (arrays, ring buffers, queues, and a bunch more).
 SEC(".maps")
@@ -53,7 +75,15 @@ HashMap global_hash_map;
 SEC("tracepoint/syscalls/sys_enter_execve")
 int hello(void *ctx) {
   __u64 counter = 0;
-  __u64 uid = bpf_get_current_uid_gid();
+
+  // Returns the `uid` (lower half) and `gid` (higher half) as a single u64. 
+  __u64 uid_gid = bpf_get_current_uid_gid();
+
+  // Only `uid` (lower half).
+  __u64 uid = uid_gid & 0xffffffff;
+
+  // Only `gid` (higher half).
+  // __u64 gid = uid_gid >> 32;
 
   // Performs the lookup on `Map` by `Key`.
   //
@@ -64,14 +94,17 @@ int hello(void *ctx) {
   }
 
   counter += 1;
-  bpf_printk("key: %d | value: %d", uid, counter);
 
   HashElement updated = { .counter = counter };
   // Upserts the `Map` by checking `Key`
   bpf_map_update_elem(&global_hash_map, &uid, &updated, BPF_ANY);
 
-  // __u64 debug_uid = 1000;
-  // bpf_map_update_elem(&global_hash_map, &debug_uid, &updated, BPF_ANY);
+  CallbackContext data = { .context = ctx, .output = 0 };
+
+  // `flags` must be set to `0`.
+  long total_iterations = bpf_for_each_map_elem(&global_hash_map, iterator_fn, &data, 0);
+
+  bpf_printk("output of each map %llu | total_iterations %ld", data.output, total_iterations);
 
   return 0;
 }

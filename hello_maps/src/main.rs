@@ -97,22 +97,26 @@ fn main() {
     loop {
         log::info!("...");
 
-        {
-            // The `libbpf-sys` crate also outputs the double `1000`.
-            let fd = skel.maps().global_hash_map().fd();
-            let mut next_key = vec![0; 8];
-            unsafe {
-                let result =
-                    libbpf_sys::bpf_map_get_next_key(fd, ptr::null(), next_key.as_mut_ptr() as _);
+        // {
+        //     // The `libbpf-sys` crate also outputs the double `1000`.
+        //     let fd = skel.maps().global_hash_map().fd();
+        //     let mut next_key = vec![0; 8];
+        //     unsafe {
+        //         while libbpf_sys::bpf_map_get_next_key(fd, ptr::null(), next_key.as_mut_ptr() as _)
+        //             == 0
+        //         {
+        //             let raw_key: u64 = *plain::from_bytes(&next_key).expect("Invalid buffer!");
 
-                log::info!("result next key {result:#} key is {next_key:?}");
-            }
-        }
+        //             log::info!("next_key is {next_key:?} raw_key {raw_key:#?}");
+        //             next_key = vec![0; 8];
+        //         }
+        //     }
+        // }
 
         for key_bytes in skel.maps().global_hash_map().keys() {
             // TODO(alex) [high] 2023-04-30: For some reason, we get `1000, 1000`, instead of only
             // `1000`, which turns our key value into a huge number.
-            let key: &u64 = plain::from_bytes(&key_bytes).expect("Invalid buffer!");
+            let key: u64 = *plain::from_bytes(&key_bytes).expect("Invalid buffer!");
 
             let value_bytes = skel
                 .maps()
