@@ -39,7 +39,7 @@
 use plain::Plain;
 ///
 /// Details can also be seen in the [kernel maps page](https://docs.kernel.org/bpf/maps.html).
-use std::{process::exit, ptr, thread::sleep, time::Duration};
+use std::{process::exit, thread::sleep, time::Duration};
 
 use libbpf_rs::{MapFlags, PrintLevel};
 use nix::unistd::Uid;
@@ -90,32 +90,13 @@ fn main() {
     let mut skel = open.load().unwrap();
     let _attached = skel.attach().unwrap();
 
-    let key_size = skel.maps().global_hash_map().key_size();
     let map_info = skel.maps().global_hash_map().info();
-    log::debug!("key size {key_size:#?} | map info {map_info:#?}");
+    log::debug!("map info {map_info:#?}");
 
     loop {
         log::info!("...");
 
-        // {
-        //     // The `libbpf-sys` crate also outputs the double `1000`.
-        //     let fd = skel.maps().global_hash_map().fd();
-        //     let mut next_key = vec![0; 8];
-        //     unsafe {
-        //         while libbpf_sys::bpf_map_get_next_key(fd, ptr::null(), next_key.as_mut_ptr() as _)
-        //             == 0
-        //         {
-        //             let raw_key: u64 = *plain::from_bytes(&next_key).expect("Invalid buffer!");
-
-        //             log::info!("next_key is {next_key:?} raw_key {raw_key:#?}");
-        //             next_key = vec![0; 8];
-        //         }
-        //     }
-        // }
-
         for key_bytes in skel.maps().global_hash_map().keys() {
-            // TODO(alex) [high] 2023-04-30: For some reason, we get `1000, 1000`, instead of only
-            // `1000`, which turns our key value into a huge number.
             let key: u64 = *plain::from_bytes(&key_bytes).expect("Invalid buffer!");
 
             let value_bytes = skel
@@ -128,7 +109,6 @@ fn main() {
                 .as_ref()
                 .map(|bytes| HashElement::from_bytes(bytes));
 
-            log::info!("raw key: {key_bytes:04x?} | value_bytes: {value_bytes:?}");
             log::info!("ID (key): {key:#?} | value: {value:#?}");
         }
         sleep(Duration::from_secs(1));
