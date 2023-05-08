@@ -43,8 +43,14 @@ impl Debug for ProgramData {
         f.debug_struct("ProgramData")
             .field("PID", &self.pid)
             .field("UID", &self.uid)
-            .field("command", &String::from_utf8_lossy(&self.command[..]))
-            .field("message", &String::from_utf8_lossy(&self.message[..]))
+            .field(
+                "command",
+                &String::from_utf8_lossy(&self.command[..]).trim_end_matches('\0'),
+            )
+            .field(
+                "message",
+                &String::from_utf8_lossy(&self.message[..]).trim_end_matches('\0'),
+            )
             .finish()
     }
 }

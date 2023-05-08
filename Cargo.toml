@@ -4,7 +4,8 @@ members = [
 	"query-bpf",
 	"hello-world",
 	"hello_maps",
-	"hello_ring"
+	"hello_ring",
+	"hello_tail_call"
 ]
 
 [workspace.dependencies]
@@ -15,3 +16,4 @@ libbpf-cargo = "*"
 log = "*"
 env_logger = "*"
 plain = "*"
+const_format = "*"
