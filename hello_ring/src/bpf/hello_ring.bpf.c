@@ -8,15 +8,17 @@ char LICENSE[] = "Dual BSD/GPL";
 
 /// MPSC queue, with variable-length data records.
 ///
-/// The ring buffer allows us to read data from user-space, this is "just" a memory-mapped region,
-/// so no memory copying is neccessary (we just read from a cursor).
+/// The ring buffer allows us to read data from user-space, this is "just" a
+/// memory-mapped region, so no memory copying is neccessary (we just read from
+/// a cursor).
 ///
 /// Supports `epoll` and busy-loop (for low latency).
 ///
 /// Writing to it occurs in 2 separate steps:
-/// 
+///
 /// 1. *reservation*, where you just reserve the space for data, which can fail;
-/// 2. *submiting*, which cannot fail, as we have checked for space during reservation;
+/// 2. *submiting*, which cannot fail, as we have checked for space during
+/// reservation;
 typedef struct {
   __uint(type, BPF_MAP_TYPE_RINGBUF);
   __uint(max_entries, 256 * 1024);
@@ -36,15 +38,17 @@ RingBuffer output;
 SEC("tracepoint/syscalls/sys_enter_execve")
 int hello(void *ctx) {
   ProgramData program_data = {
-    .pid = bpf_get_current_pid_tgid() >> 32,
-    .uid = bpf_get_current_uid_gid() & 0xffffffff,
+      .pid = bpf_get_current_pid_tgid() >> 32,
+      .uid = bpf_get_current_uid_gid() & 0xffffffff,
   };
 
   char message[32] = "Hello";
   bpf_get_current_comm(&program_data.command, sizeof(program_data.command));
-  bpf_probe_read_kernel(&program_data.message, sizeof(program_data.message), message);
+  bpf_probe_read_kernel(&program_data.message, sizeof(program_data.message),
+                        message);
 
   // Copies `data` into the `ringbuf`.
+  // We can then access this data (as bytes) from our rust program.
   bpf_ringbuf_output(&output, &program_data, sizeof(program_data), 0);
 
   // This crashes during program load, with an error of:

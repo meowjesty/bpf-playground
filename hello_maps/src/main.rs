@@ -36,13 +36,12 @@
 //! 	BPF_MAP_TYPE_USER_RINGBUF,
 //! };
 //!```
-use plain::Plain;
-///
-/// Details can also be seen in the [kernel maps page](https://docs.kernel.org/bpf/maps.html).
-use std::{process::exit, thread::sleep, time::Duration};
-
+//!
+//! Details can also be seen in the [kernel maps page](https://docs.kernel.org/bpf/maps.html).
 use libbpf_rs::{MapFlags, PrintLevel};
 use nix::unistd::Uid;
+use plain::Plain;
+use std::{process::exit, thread::sleep, time::Duration};
 
 mod hello_maps {
     include!(concat!(env!("OUT_DIR"), "/hello_maps.skel.rs"));
@@ -58,12 +57,17 @@ fn print_based_on_log(level: PrintLevel, msg: String) {
     }
 }
 
+/// The data we're storing in the hashmap.
+///
+/// This type is a mirror definition of what we have on the bpf program.
 #[repr(C)]
 #[derive(Default, Debug)]
 struct HashElement {
     counter: u64,
 }
 
+/// Implementing [`Plain`] gives us an easy way of decoding the bytes we get from bpf into a nice
+/// rust type.
 unsafe impl Plain for HashElement {}
 
 impl HashElement {
@@ -74,7 +78,6 @@ impl HashElement {
 
 fn main() {
     env_logger::init();
-
     log::info!("Starting hello_maps");
 
     if !Uid::effective().is_root() {
@@ -90,6 +93,9 @@ fn main() {
     let mut skel = open.load().unwrap();
     let _attached = skel.attach().unwrap();
 
+    // We can access the `global_hash_map` global from the bpf program.
+    //
+    // Here we just want to get its `MapInfo`.
     let map_info = skel.maps().global_hash_map().info();
     log::debug!("map info {map_info:#?}");
 

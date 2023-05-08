@@ -18,6 +18,9 @@ fn print_based_on_log(level: PrintLevel, msg: String) {
     }
 }
 
+/// Contains the data we're storing in the ring buffer.
+///
+/// This is the same type we have on the `C` side (in `hello_ring.bpf.c`).
 #[repr(C)]
 #[derive(Default)]
 struct ProgramData {
@@ -61,7 +64,6 @@ fn main() {
     let builder = HelloRingSkelBuilder::default();
 
     let open = builder.open().unwrap();
-    // TODO(alex) [high] 2023-05-02: We fail here!
     let mut skel = open.load().unwrap();
     let _attached = skel.attach().unwrap();
 

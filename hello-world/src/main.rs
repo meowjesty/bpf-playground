@@ -1,7 +1,11 @@
-use std::{process::exit, thread::sleep, time::Duration};
-
+//! To run this whole thing, follow these steps:
+//!
+//! 1. `cargo build` in the workspace (or individual project);
+//! 2. `sudo RUST_LOG=trace ./target/{build}/{project}` from the workspace folder;
+//! 3. `sudo cat /sys/kernel/debug/tracing/trace_pipe` to see the bpf default output;
 use libbpf_rs::PrintLevel;
 use nix::unistd::Uid;
+use std::{process::exit, thread::sleep, time::Duration};
 
 mod hello_world {
     include!(concat!(env!("OUT_DIR"), "/hello_world.skel.rs"));
