@@ -70,10 +70,22 @@ fn main() {
     log::debug!("Map info: {:#?}", skel.maps().output().info());
 
     let mut ring_buffer_builder = RingBufferBuilder::new();
+
+    // Adds the `output` (global C variable in `hello_ring.bpf.c`) ring buffer.
+    //
+    // We're registering the `output` ring buffer `fd` with a callback, that'll be setup with
+    // `libbfps_sys::ring_buffer__new` later on, actually connecting the buffer we have here with
+    // the one on the bpf program.
+    //
+    // I think that this is similar to how you initialize and interact with GPU buffers.
     ring_buffer_builder
         .add(
             skel.maps().output(),
-            // Callback that is called on `RingBuffer::poll`.
+            // Callback that is called on `RingBuffer::poll`, which is our way of querying the
+            // buffer for changes.
+            //
+            // This is async done with callbacks, which means that if we want to interact with the
+            // things inside, we would need Rust channels.
             |bytes| {
                 if bytes.len() >= size_of::<ProgramData>() {
                     let data = ProgramData::from_bytes(bytes);
@@ -92,6 +104,9 @@ fn main() {
     loop {
         log::info!("...");
 
+        // Queries the ring buffer, and triggers our callback.
+        //
+        // Reminds me of Cpp's ASIO async stuff.
         ring_buffer.poll(Duration::from_secs(30)).unwrap();
 
         sleep(Duration::from_secs(1));
