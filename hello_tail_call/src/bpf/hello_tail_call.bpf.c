@@ -18,6 +18,9 @@ typedef struct {
   /// Both they `key_size` and `value_size` must be exactly 4 bytes (`u32`).
   __uint(type, BPF_MAP_TYPE_PROG_ARRAY);
   __uint(max_entries, 256 * 1024);
+
+  // It did not like when I set this to `__u64`, maybe related how this is a
+  // `__uint()`, but there doesn't seem to exist an `__uint64()` though?
   __uint(key_size, sizeof(__u32));
 
   /// These will be our syscall opcodes.
@@ -59,27 +62,24 @@ int run(struct bpf_raw_tracepoint_args *tracepoint_args) {
 
   // We only display something here if the `bpf_tail_call` fails, due to
   // `opcode` not being a valid index for the `syscalls` map.
-  bpf_trace_printk("syscall: {%d}", opcode);
+  // bpf_trace_printk("syscall: {%d}", opcode);
   return 0;
 }
 
 /// Loaded into the `syscalls` program array map, and is executed when the
 /// `bpf_tail_call` `opcode` is `execve`.
 SEC("raw_tracepoint")
-int enter_execve(void *ctx) {
-  bpf_trace_printk("enter_execve %d", 0);
-  return 0;
-}
+int enter_execve(void *ctx) { return 0; }
 
 /// Loaded into the `syscalls` program array map.
 SEC("raw_tracepoint")
 int timer(struct bpf_raw_tracepoint_args *tracepoint_args) {
   if (tracepoint_args->args[1] == 222) {
-    bpf_trace_printk("create timer %d", 222);
+    bpf_printk("create timer %s", "timer");
   } else if (tracepoint_args->args[1] == 226) {
-    bpf_trace_printk("deleting timer %d", 226);
+    bpf_printk("deleting timer");
   } else {
-    bpf_trace_printk("timer operation %d", tracepoint_args->args[1]);
+    bpf_printk("timer operation");
   }
 
   return 0;
