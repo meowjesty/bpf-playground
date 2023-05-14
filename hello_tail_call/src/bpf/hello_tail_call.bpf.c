@@ -1,4 +1,4 @@
-/// Helpeful links:
+/// Helpful links:
 /**
 https://blog.cloudflare.com/assembly-within-bpf-tail-calls-on-x86-and-arm/
 
@@ -27,6 +27,9 @@ typedef struct {
   __uint(value_size, sizeof(__u32));
 } ProgramArray;
 
+/// Link with syscall opcodes:
+///
+/// https://filippo.io/linux-syscall-table/
 SEC(".maps")
 ProgramArray syscalls;
 
@@ -52,24 +55,35 @@ int run(struct bpf_raw_tracepoint_args *tracepoint_args) {
   // `execve`).
   int opcode = tracepoint_args->args[1];
 
-  // Jumps into another bpf program (indexed here by `opcode`) preserving the
-  // stack frame. Sort of like a loop, it should never come back from this
-  // (doesn't go back to a previous program).
+  // You cannot call `bpf_map_lookup_elem` for a `BPF_MAP_TYPE_PROG_ARRAY`, it
+  // errors out at load time with:
+  // "cannot pass map_type 3 into func bpf_map_lookup_elem#1"
   //
-  // On failure it's basically skipped, and we move on to the `bpf_trace_printk`
-  // line (continues execution of the current program).
+  // The same is true for `bpf_map_update_elem`.
+  //
+  //  void *sys_fd = bpf_map_lookup_elem(&syscalls, &key);
+
+  // Jumps into another bpf program (indexed here by `opcode`) preserving
+  // the stack frame. Sort of like a loop, it should never come back from
+  // this (doesn't go back to a previous program).
+  //
+  // On failure it's basically skipped, and we move on to the
+  // `bpf_trace_printk` line (continues execution of the current program).
   bpf_tail_call(tracepoint_args, &syscalls, opcode);
 
   // We only display something here if the `bpf_tail_call` fails, due to
   // `opcode` not being a valid index for the `syscalls` map.
-  // bpf_trace_printk("syscall: {%d}", opcode);
+  bpf_printk("syscall bypassed our tail call: {%d}", opcode);
   return 0;
 }
 
 /// Loaded into the `syscalls` program array map, and is executed when the
 /// `bpf_tail_call` `opcode` is `execve`.
 SEC("raw_tracepoint")
-int enter_execve(void *ctx) { return 0; }
+int enter_execve(void *ctx) {
+  bpf_printk("excve was called");
+  return 0;
+}
 
 /// Loaded into the `syscalls` program array map.
 SEC("raw_tracepoint")
@@ -89,3 +103,11 @@ int timer(struct bpf_raw_tracepoint_args *tracepoint_args) {
 /// program).
 SEC("raw_tracepoint")
 int ignore_opcode(void *ctx) { return 0; }
+
+/// Loaded into the `syscalls` program array map, and is executed for some
+/// syscalls.
+SEC("raw_tracepoint")
+int random_syscall(struct bpf_raw_tracepoint_args *tracepoint_args) {
+  bpf_printk("random syscall [%d]", tracepoint_args->args[1]);
+  return 0;
+}
