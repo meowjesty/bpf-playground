@@ -1,7 +1,8 @@
 #![feature(result_option_inspect)]
-use std::{process::exit, thread::sleep, time::Duration};
+use std::process::exit;
 
 use libbpf_rs::{MapFlags, PrintLevel};
+use log::{debug, error, info, trace, warn};
 use nix::unistd::Uid;
 
 mod hello_tail_call {
@@ -11,18 +12,20 @@ use hello_tail_call::*;
 
 fn print_based_on_log(level: PrintLevel, msg: String) {
     match level {
-        PrintLevel::Debug => println!("[Debug] {}", msg),
-        PrintLevel::Info => println!("[Info] {}", msg),
-        PrintLevel::Warn => println!("[Warn] {}", msg),
+        PrintLevel::Debug => debug!("{msg}"),
+        PrintLevel::Info => info!("{msg}"),
+        PrintLevel::Warn => warn!("{msg}"),
     }
 }
 
 fn main() {
+    std::env::set_var("RUST_LOG", "trace");
+
     env_logger::Builder::from_default_env()
         .target(env_logger::Target::Stdout)
         .init();
 
-    println!("Starting hello_tail_call");
+    info!("Starting hello_tail_call");
 
     if !Uid::effective().is_root() {
         log::error!("Must run as root!");
@@ -36,7 +39,7 @@ fn main() {
     let open = builder.open().unwrap();
     let mut skel = open
         .load()
-        .inspect_err(|fail| println!("Failed loading with {fail:#?}"))
+        .inspect_err(|fail| error!("Failed loading with {fail:#?}"))
         .unwrap();
 
     let enter_execve_fd = skel.progs().enter_execve().fd().to_le_bytes();
@@ -44,10 +47,10 @@ fn main() {
     let timer_fn_fd = skel.progs().timer().fd().to_le_bytes();
     let random_syscall_fn_fd = skel.progs().random_syscall().fd().to_le_bytes();
 
-    println!("enter_execve_fd {enter_execve_fd:?}");
-    println!("ignore_fn_fd {ignore_fn_fd:?}");
-    println!("timer_fn_fd {timer_fn_fd:?}");
-    println!("random_syscall_fn_fd {random_syscall_fn_fd:?}");
+    trace!("enter_execve_fd {enter_execve_fd:?}");
+    trace!("ignore_fn_fd {ignore_fn_fd:?}");
+    trace!("timer_fn_fd {timer_fn_fd:?}");
+    trace!("random_syscall_fn_fd {random_syscall_fn_fd:?}");
 
     let mut maps = skel.maps_mut();
     let syscalls = maps.syscalls();
@@ -183,10 +186,4 @@ fn main() {
         .unwrap();
 
     let _attached = skel.attach().unwrap();
-
-    // loop {
-    //     log::info!("...");
-
-    //     sleep(Duration::from_secs(1));
-    // }
 }
