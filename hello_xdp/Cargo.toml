@@ -1,0 +1,18 @@
+[package]
+name = "hello_xdp"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+libbpf-rs.workspace = true
+libbpf-sys.workspace = true
+nix.workspace = true
+log.workspace = true
+env_logger.workspace = true
+plain.workspace = true
+
+[build-dependencies]
+libbpf-cargo.workspace = true
+const_format.workspace = true

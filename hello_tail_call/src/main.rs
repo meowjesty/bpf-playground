@@ -1,5 +1,5 @@
 #![feature(result_option_inspect)]
-use std::{process::exit, thread::sleep, time::Duration};
+use std::process::exit;
 
 use libbpf_rs::{MapFlags, PrintLevel};
 use nix::unistd::Uid;
@@ -183,10 +183,4 @@ fn main() {
         .unwrap();
 
     let _attached = skel.attach().unwrap();
-
-    // loop {
-    //     log::info!("...");
-
-    //     sleep(Duration::from_secs(1));
-    // }
 }
