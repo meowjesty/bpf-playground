@@ -35,6 +35,10 @@ __u32 counter = 0;
 ///
 /// This program just prints the value of `counter` whenever a new packet
 /// arrives.
+///
+/// Unlike the previous `sys_enter` examples, this program has to be attached to
+/// something (a network interface in this case), it doesn't run on its own on
+/// some event (again, unless it's attached).
 SEC("xdp")
 int sample(struct xdp_md *context) {
   bpf_printk("counter [%d]", counter);
