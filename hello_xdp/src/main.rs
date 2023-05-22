@@ -1,10 +1,9 @@
 #![feature(result_option_inspect)]
-use std::{process::exit, ptr};
+use std::process::exit;
 
 use libbpf_rs::PrintLevel;
-use libbpf_sys::{bpf_xdp_set_link_opts, XDP_FLAGS_UPDATE_IF_NOEXIST};
 use log::{debug, error, info, warn};
-use nix::unistd::Uid;
+use nix::{net::if_::if_nametoindex, unistd::Uid};
 
 mod hello_xdp {
     include!(concat!(env!("OUT_DIR"), "/hello_xdp.skel.rs"));
@@ -28,25 +27,28 @@ fn sample() {
         .inspect_err(|fail| error!("Failed loading with {fail:#?}"))
         .unwrap();
 
-    let mut opts = bpf_xdp_set_link_opts::default();
+    // You MUST attach to the correct `ifindex` (Interface Index).
+    //
+    // An easy way to retrieve this index value is to use linux's `if_nametoindex` if you know
+    // the name of the interface (e.g. `eth0`). Or use the `ip link` which shows the index as:
+    //
+    // 2: enp5s0: (...)
+    // ^
+    // |
+    // the `ifindex`
+    //
+    // If you use an invalid value here, meaning that the value doesn't correspond to any interface,
+    // you'll be met with a very unhelpful error message of:
+    //
+    // > libbpf: prog 'sample': failed to attach to xdp: Invalid argument
+    let _link = skel
+        .progs_mut()
+        .sample()
+        .attach_xdp(if_nametoindex("enp5s0").unwrap() as i32)
+        .unwrap();
 
-    let run_fd = skel.progs_mut().run().fd();
-    debug!("run_fd {run_fd:#?}");
-
-    // TODO(alex) [high] 2023-05-21: Why is this crashing with `-19` (`ENODEV`)?
-    let attached = unsafe {
-        libbpf_sys::bpf_xdp_attach(
-            540,
-            run_fd,
-            XDP_FLAGS_UPDATE_IF_NOEXIST | libbpf_sys::XDP_FLAGS_SKB_MODE,
-            ptr::null(),
-        )
-    };
-    if attached < 0 {
-        panic!("Failed attaching with {attached:#?}");
-    }
-
-    // debug!("{:#?}", skel.progs_mut().run().autoload());
+    // There is an example which manually updates the `skel.links`, but we don't need this.
+    // skel.links = HelloXdpLinks { sample: Some(link) };
 
     // let program_path = "/sys/fs/bpf/hello_xdp";
     // We can pin a program to some file path (optional for most use-cases, include this one).
@@ -57,13 +59,9 @@ fn sample() {
     // the program is running (the Rust program).
     // skel.progs_mut().run().pin(program_path).unwrap();
 
-    // debug!("{:#?}", program.attach_type());
-    // debug!("{:#?}", program.prog_type());
-
-    let attached = skel.attach().unwrap();
-
     loop {
         std::thread::sleep(std::time::Duration::from_secs(1));
+        print!(".");
     }
 
     // Remember to `unpin`, otherwise the file in `program_path` will stay created there.

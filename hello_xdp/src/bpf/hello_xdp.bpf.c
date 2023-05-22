@@ -36,7 +36,7 @@ __u32 counter = 0;
 /// This program just prints the value of `counter` whenever a new packet
 /// arrives.
 SEC("xdp")
-int run(void *context) {
+int sample(struct xdp_md *context) {
   bpf_printk("counter [%d]", counter);
 
   counter += 1;
