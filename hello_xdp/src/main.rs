@@ -51,12 +51,19 @@ fn sample() {
     // skel.links = HelloXdpLinks { sample: Some(link) };
 
     // let program_path = "/sys/fs/bpf/hello_xdp";
-    // We can pin a program to some file path (optional for most use-cases, include this one).
+    // We can pin a program to some file path (optional for most use-cases, including this one).
     //
     // Has to be unique (bpf-ID and pinned path are always unique).
     //
     // If you don't attach to the file system like this, then the "attachment" lives only while
-    // the program is running (the Rust program).
+    // the program is running (the Rust program / userspace program).
+    //
+    // This happens due to programs in bpf being reference counted, so if the count decrements to
+    // `0` (no userspace thing is holding a reference), then it gets "dropped" (deleted).
+    //
+    // The "pin" happens in the filesystem, but it actually only lives in memory (reboot clears it,
+    // or you can `rm {file-path}`).
+    //
     // skel.progs_mut().run().pin(program_path).unwrap();
 
     loop {
@@ -64,7 +71,9 @@ fn sample() {
         print!(".");
     }
 
-    // Remember to `unpin`, otherwise the file in `program_path` will stay created there.
+    // Remember to `unpin`, otherwise the file in `program_path` will stay created there (until
+    // reboot).
+    //
     // program.unpin(program_path).unwrap();
 }
 

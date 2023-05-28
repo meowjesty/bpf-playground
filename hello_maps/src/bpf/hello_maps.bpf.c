@@ -108,6 +108,18 @@ int hello(void *ctx) {
   // Upserts the `Map` by checking `Key`
   bpf_map_update_elem(&global_hash_map, &uid, &updated, BPF_ANY);
 
+  // You'll see many things like these (commands) for basically every function
+  // you can use in bpf. We don't have to deal with these commands, due to using
+  // `libbpf`, but if we were to use the `bpf(...)` syscall, then these would be
+  // the first argument, which is the command we want to execute in bpf-land.
+  //
+  // An equivalent way of updating an element from the Rust side (userspace)
+  // would be:
+  //
+  // `bpf(BPF_MAP_UPDATE_ELEM, bpf_attr: { map_fd, key, value, flags }, size);`
+  //
+  // BPF_MAP_UPDATE_ELEM
+
   CallbackContext data = {.context = ctx, .output = 0};
 
   // `flags` must be set to `0`.
