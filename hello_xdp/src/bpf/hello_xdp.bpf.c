@@ -39,6 +39,9 @@ __u32 counter = 0;
 /// Unlike the previous `sys_enter` examples, this program has to be attached to
 /// something (a network interface in this case), it doesn't run on its own on
 /// some event (again, unless it's attached).
+///
+/// Use `ip link` to see the attached program + it's id on the network interface
+/// we selected.
 SEC("xdp")
 int sample(struct xdp_md *context) {
   bpf_printk("counter [%d]", counter);
