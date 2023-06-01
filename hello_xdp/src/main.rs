@@ -59,7 +59,12 @@ fn sample() {
     // the program is running (the Rust program / userspace program).
     //
     // This happens due to programs in bpf being reference counted, so if the count decrements to
-    // `0` (no userspace thing is holding a reference), then it gets "dropped" (deleted).
+    // `0` (no userspace thing is holding a reference), then it gets "dropped" (deleted). Note that
+    // bpf maps are also reference counted (and they can also be pinned).
+    //
+    // Read more about lifetimes of bpf things in:
+    //
+    // https://facebookmicrosites.github.io/bpf/blog/2018/08/31/object-lifetime.html
     //
     // The "pin" happens in the filesystem, but it actually only lives in memory (reboot clears it,
     // or you can `rm {file-path}`).

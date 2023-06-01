@@ -9,6 +9,17 @@ typedef struct {
   __u64 counter;
 
   /// We could use this `bpf_spin_lock` to properly access the element directly.
+  ///
+  /// Required when dealing with multiple CPU cores trying to access the same
+  /// resource.
+  ///
+  /// It comes with a few restrictions:
+  ///
+  /// 1. Can only be used for maps of type hash and arrays;
+  /// 2. **Cannot** be used in tracing or socket filter bpf programs;
+  ///
+  /// Read more here: https://lwn.net/Articles/779120/
+  ///
   // struct bpf_spin_lock lock;
 } HashElement;
 

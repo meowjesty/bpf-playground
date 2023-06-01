@@ -6,7 +6,8 @@ members = [
 	"hello_maps",
 	"hello_ring",
 	"hello_tail_call",
-	"hello_xdp"
+	"hello_xdp",
+	"more_maps"
 ]
 
 [workspace.dependencies]
