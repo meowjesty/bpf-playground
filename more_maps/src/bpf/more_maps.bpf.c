@@ -25,13 +25,13 @@ typedef struct {
 typedef struct {
   int pid;
   int uid;
-  char command[16];
-  char message[16];
-  char path[16];
+  char command[32];
+  char message[32];
+  char path[32];
 } Data;
 
 typedef struct {
-  char value[16];
+  char value[32];
 } UserMessage;
 
 typedef struct {
@@ -60,10 +60,12 @@ Buffer global_buffer;
 SEC(".maps")
 UserMessages user_messages;
 
+const char DEFAULT_MESSAGE[32] = "Default message";
+
 /// Auto-attaches to whatever arch, a `kprobe` to `execve`.
 ///
-/// `BPF_KPROBE_SYSCALL` macro is defined in `<bpf/bpf_tracing.h>`, but it also
-/// requires `<bpf/bpf_core_read.h>` to work.
+/// `BPF_KPROBE_SYSCALL` macro is defined in `<bpf/bpf_tracing.h>`, but it
+/// also requires `<bpf/bpf_core_read.h>` to work.
 ///
 /// This macro is defined in`libbpf` and allows us to access the syscall
 /// arguments by name, hence why we can use `pathname` here, instead of the
@@ -72,6 +74,9 @@ UserMessages user_messages;
 /// - `sample_program`: the name of our program;
 /// - `pathname`: argument to `execve`, it's the path of the program that's
 ///  going to be executed.
+///
+/// We're not seeing the `void *ctx` argument here, but it is accessible
+/// from within the macro-ed function.
 SEC("ksyscall/excve")
 int BPF_KPROBE_SYSCALL(sample_program, const char *pathname) {
   Data data = {};
@@ -81,17 +86,40 @@ int BPF_KPROBE_SYSCALL(sample_program, const char *pathname) {
   data.uid = BPF_FUNC_get_current_uid_gid & 0xffffffff;
 
   bpf_get_current_comm(&data.command, sizeof(data.command));
+
+  // Copies `pathname` string to `data.path`.
   bpf_probe_read_user_str(&data.path, sizeof(data.path), pathname);
 
   message = bpf_map_lookup_elem(&user_messages, &data.uid);
 
   if (message) {
+    // Tracing programs have a somewhat restricted access to memory, and these
+    // `bpf_probe_read_*` (and `bpf_probe_write_*`) are how we do pointer memory
+    // access (`x = p->y`);
+    //
+    // libbpf provides a helper macro `bpf_core_read(dst, size, src)` that uses
+    // the special clang instruction `__builtin_presever_access_index`.
+    //
+    // It also provides another macro `BPF_CORE_READ` which allows putting
+    // multiple reads into a single line, such as:
+    //
+    // ```c
+    // bpf_core_read(&b, 8, a->b);
+    // bpf_core_read(&c, 8, b->c);
+    // bpf_core_read(&d, 8, c->d);
+    // ```
+    //
+    // becomes:
+    //
+    // ```c
+    // d = BPF_CORE_READ(a, b, c, d);
+    // ```
     bpf_probe_read_kernel(&data.message, sizeof(data.message), message->value);
   } else {
     bpf_probe_read_kernel(&data.message, sizeof(data.message), message);
   }
 
-  // TODO(alex) [high] 2023-06-01: Finish this sample.
+  bpf_ringbuf_output(&global_buffer, &data, sizeof(data), 0);
 
   return 0;
 }
