@@ -6,6 +6,14 @@
 //! Generated with:
 //!
 //! `bpftool btf dump file /sys/kernel/btf/vmlinux format c > vmlinux.h`
+//!
+//! **Warning**:
+//!
+//! Be very careful when updating the system, as I just got an
+//! "Error (-22) - invalid argument" that failed to create `global_buffer` due
+//! to `vmlinux` version mismatch with updated kernel.
+//!
+//! Solving this is just a matter of re-running the `bpftool` like what's above.
 #include "vmlinux.h"
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
@@ -23,13 +31,11 @@ typedef struct {
   /// avoid it.
   __uint(type, BPF_MAP_TYPE_RINGBUF);
   __uint(max_entries, 256 * 1024);
-  __uint(key_size, sizeof(u32));
-  __uint(value_size, sizeof(u32));
 } Buffer;
 
 typedef struct {
-  int pid;
-  int uid;
+  __u64 pid;
+  __u64 uid;
   char command[32];
   char message[32];
   char path[32];
@@ -82,13 +88,13 @@ const char DEFAULT_MESSAGE[32] = "Default message";
 ///
 /// We're not seeing the `void *ctx` argument here, but it is accessible
 /// from within the macro-ed function.
-SEC("ksyscall/excve")
+SEC("ksyscall/execve")
 int BPF_KPROBE_SYSCALL(sample_program, const char *pathname) {
   Data data = {};
   UserMessage *message;
 
   data.pid = bpf_get_current_pid_tgid() >> 32;
-  data.uid = BPF_FUNC_get_current_uid_gid & 0xffffffff;
+  data.uid = bpf_get_current_uid_gid() & 0xffffffff;
 
   bpf_get_current_comm(&data.command, sizeof(data.command));
 

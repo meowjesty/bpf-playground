@@ -27,7 +27,7 @@ fn sample() {
         .inspect_err(|fail| error!("Failed loading with {fail:#?}"))
         .unwrap();
 
-    // You MUST attach to the correct `ifindex` (Interface Index).
+    // You MUST attach to the CORRECT `ifindex` (Interface Index).
     //
     // An easy way to retrieve this index value is to use linux's `if_nametoindex` if you know
     // the name of the interface (e.g. `eth0`). Or use the `ip link` which shows the index as:
@@ -41,6 +41,9 @@ fn sample() {
     // you'll be met with a very unhelpful error message of:
     //
     // > libbpf: prog 'sample': failed to attach to xdp: Invalid argument
+    //
+    // Some types can be auto-attached thanks to `SEC` (see `more_maps` sample), but for xpd we have
+    // to manually do it.
     let _link = skel
         .progs_mut()
         .sample()
@@ -51,6 +54,7 @@ fn sample() {
     // skel.links = HelloXdpLinks { sample: Some(link) };
 
     // let program_path = "/sys/fs/bpf/hello_xdp";
+    //
     // We can pin a program to some file path (optional for most use-cases, including this one).
     //
     // Has to be unique (bpf-ID and pinned path are always unique).

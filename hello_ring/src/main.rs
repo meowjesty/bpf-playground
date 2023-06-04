@@ -55,6 +55,10 @@ impl Debug for ProgramData {
     }
 }
 
+/// Used for stop/continuing to receive data in a ring buffer. Any non-zero value means **stop**.
+const STOP: i32 = 1;
+const CONTINUE: i32 = 0;
+
 fn main() {
     env_logger::init();
 
@@ -93,13 +97,15 @@ fn main() {
             // This is async done with callbacks, which means that if we want to interact with the
             // things inside, we would need Rust channels.
             |bytes| {
+                // The callback gets called when new data arrives.
                 if bytes.len() >= size_of::<ProgramData>() {
                     let data = ProgramData::from_bytes(bytes);
                     log::debug!("Have data {data:#?}");
-                    0
+
+                    CONTINUE
                 } else {
                     // Stop ring buffer consumption early.
-                    1
+                    STOP
                 }
             },
         )

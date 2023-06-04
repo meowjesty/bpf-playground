@@ -91041,6 +91041,7 @@ enum tpm2_startup_types {
 };
 
 enum tpm_chip_flags {
+	TPM_CHIP_FLAG_BOOTSTRAPPED = 1,
 	TPM_CHIP_FLAG_TPM2 = 2,
 	TPM_CHIP_FLAG_IRQ = 4,
 	TPM_CHIP_FLAG_VIRTUAL = 8,
@@ -91048,6 +91049,7 @@ enum tpm_chip_flags {
 	TPM_CHIP_FLAG_ALWAYS_POWERED = 32,
 	TPM_CHIP_FLAG_FIRMWARE_POWER_MANAGED = 64,
 	TPM_CHIP_FLAG_FIRMWARE_UPGRADE = 128,
+	TPM_CHIP_FLAG_SUSPENDED = 256,
 };
 
 enum tpm2_pt_props {
@@ -91626,6 +91628,7 @@ enum tpm_tis_flags {
 	TPM_TIS_ITPM_WORKAROUND = 1,
 	TPM_TIS_INVALID_STATUS = 2,
 	TPM_TIS_DEFAULT_CANCELLATION = 4,
+	TPM_TIS_IRQ_TESTED = 8,
 };
 
 struct tpm_tis_phy_ops;
@@ -91636,7 +91639,7 @@ struct tpm_tis_data {
 	unsigned int locality_count;
 	int locality;
 	int irq;
-	bool irq_tested;
+	unsigned int int_mask;
 	long unsigned int flags;
 	void *ilb_base_addr;
 	u16 clkrun_enabled;
@@ -122904,6 +122907,7 @@ struct ipcm_cookie {
 	__be32 addr;
 	int oif;
 	struct ip_options_rcu *opt;
+	__u8 protocol;
 	__u8 ttl;
 	__s16 tos;
 	char priority;

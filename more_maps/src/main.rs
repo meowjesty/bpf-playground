@@ -52,18 +52,38 @@ fn sample() {
                 let data = Data::from_bytes(bytes);
                 log::debug!("Data arrived {data:#?}");
 
-                0
+                CONTINUE
             } else {
-                1
+                STOP
             }
         })
         .unwrap();
 
+    // Maps can be shared with multiple programs by _pinning_.
+    //
+    // So we could:
+    //
+    // skel.maps_mut()
+    //     .global_buffer()
+    //     .pin("/sys/fs/bpf/mymap")
+    //     .unwrap();
+    //
+    // And access it from another program with (C example):
+    //
+    // int fd = bpf_obj_get("sys/fs/bpf/mymap");
+    // bpf_obj_get_info_by_fd(fd, ...);
+    //
+    // Equivalent Rust code:
+    //
+    // let my_map = libbpf_rs::Map::from_pinned_path("/sys/fs/bpf/mymap");
+    //
+    // We can start using `my_map` here, even though it's not part of this program's `skel`.
     let data_buffer = buffer_builder.build().unwrap();
 
     loop {
         print!(".");
 
+        // We keep polling the ring buffer to check for new data.
         data_buffer
             .poll(std::time::Duration::from_millis(250))
             .unwrap();
@@ -76,6 +96,9 @@ fn main() {
     setup();
     sample();
 }
+
+const STOP: i32 = 1;
+const CONTINUE: i32 = 0;
 
 unsafe impl Plain for Data {}
 
