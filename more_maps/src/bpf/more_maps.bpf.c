@@ -1,6 +1,11 @@
-/// Generated with:
-///
-/// `bpftool btf dump file /sys/kernel/btf/vmlinux format c > vmlinux.h`
+//! When compiling with clang, you must use `-O2`, otherwise the bpf bytecode
+//! won't pass the verifier, as lesser levels of optmization will use
+//! `callx <register>` to call helper functions, and bpf doesn't support calling
+//! addresses from registers!
+//!
+//! Generated with:
+//!
+//! `bpftool btf dump file /sys/kernel/btf/vmlinux format c > vmlinux.h`
 #include "vmlinux.h"
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
@@ -88,6 +93,8 @@ int BPF_KPROBE_SYSCALL(sample_program, const char *pathname) {
   bpf_get_current_comm(&data.command, sizeof(data.command));
 
   // Copies `pathname` string to `data.path`.
+  //
+  // bpf_core_read_user_str(&data.path, sizeof(data.path), pathname);
   bpf_probe_read_user_str(&data.path, sizeof(data.path), pathname);
 
   message = bpf_map_lookup_elem(&user_messages, &data.uid);
@@ -114,8 +121,11 @@ int BPF_KPROBE_SYSCALL(sample_program, const char *pathname) {
     // ```c
     // d = BPF_CORE_READ(a, b, c, d);
     // ```
+    //
+    // bpf_core_read(&data.message, sizeof(data.message), message->value);
     bpf_probe_read_kernel(&data.message, sizeof(data.message), message->value);
   } else {
+    // bpf_core_read(&data.message, sizeof(data.message), message);
     bpf_probe_read_kernel(&data.message, sizeof(data.message), message);
   }
 
