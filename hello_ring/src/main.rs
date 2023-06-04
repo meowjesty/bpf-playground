@@ -75,7 +75,7 @@ fn main() {
 
     let open = builder.open().unwrap();
     let mut skel = open.load().unwrap();
-    let _attached = skel.attach().unwrap();
+    skel.attach().unwrap();
 
     log::debug!("Map info: {:#?}", skel.maps().output().info());
 

@@ -182,5 +182,5 @@ fn main() {
         .update(&291_u32.to_le_bytes(), &ignore_fn_fd, MapFlags::ANY)
         .unwrap();
 
-    let _attached = skel.attach().unwrap();
+    skel.attach().unwrap();
 }

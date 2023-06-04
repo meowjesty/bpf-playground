@@ -43,7 +43,7 @@ fn sample() {
         .unwrap();
 
     // Auto-attach programs (see our definition for `sample_program` in the C file).
-    let _ = skel.attach().unwrap();
+    skel.attach().unwrap();
 
     let mut buffer_builder = RingBufferBuilder::new();
     buffer_builder
