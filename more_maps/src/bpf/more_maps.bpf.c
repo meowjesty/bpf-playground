@@ -14,6 +14,9 @@
 //! to `vmlinux` version mismatch with updated kernel.
 //!
 //! Solving this is just a matter of re-running the `bpftool` like what's above.
+//!
+//! More on this here:
+//! https://nakryiko.com/posts/bpf-core-reference-guide/#handling-incompatible-field-and-type-changes
 #include "vmlinux.h"
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
