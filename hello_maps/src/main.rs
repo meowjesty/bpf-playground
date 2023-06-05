@@ -1,4 +1,4 @@
-//! Map types are available in `linux/bpf.h::
+//! Map types are available in `linux/bpf.h`:
 //!
 //! ```
 //! enum bpf_map_type {
