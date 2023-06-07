@@ -96,6 +96,13 @@ int BPF_KPROBE_SYSCALL(sample_program, const char *pathname) {
   Data data = {};
   UserMessage *message;
 
+  // Some helper functions are not allowed in certain program types, an example
+  // would be `bpf_get_current_pid_tgid()` that is not allowed in XDP programs,
+  // but is fine here.
+  //
+  // The explanation for this particular case is that there is no user space
+  // process/thread involved when a packet is received and the XDP hook is
+  // triggered, so it makes no sense to try and get the PID of ... nothing.
   data.pid = bpf_get_current_pid_tgid() >> 32;
   data.uid = bpf_get_current_uid_gid() & 0xffffffff;
 

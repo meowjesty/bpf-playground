@@ -25,6 +25,12 @@
 //! Without this file, you get a bunch of errors of
 //! `unknown type name __u32 static long (*bpf_tail_call) (...)` and other
 //! missing type definitions like these.
+//!
+//! Useful links:
+//!
+//! - Page with a list of eBPF helper functions (you can check what is available
+//! with the `bpftool feature` command):
+//! https://man7.org/linux/man-pages/man7/bpf-helpers.7.html
 #include <linux/bpf.h>
 #include <bpf/bpf_helpers.h>
 
@@ -63,6 +69,51 @@ char LICENSE[] = "Dual BSD/GPL";
 ///
 /// For collections, there is also the `bpf_for_each_map_elem` helper, which is
 /// a nicer iterator than a dumb `for` loop.
+///
+/// The `ctx` argument here is a context that depends on the type of event. If
+/// you look into the `hello_xdp` sample, you'll see that we have `xdp_md *`.
+/// You must use the correct pointer type / event type pair, otherwise the
+/// verifier will get angry.
+///
+/// ## Kfuncs
+///
+/// You can't use internal kernel stuff, only what's available in the UAPI, but
+/// Kfuncs allows you to register kernel functions with the BPF subsystem,
+/// thus you can call these kernel functions from within BPF programs.
+///
+/// They don't provide compatibility guarantees, meaning they can change between
+/// kernel versions!
+///
+/// https://docs.kernel.org/bpf/kfuncs.html#core-kfuncs
+///
+/// ## Types of programs:
+///
+/// ### Tracing
+///
+/// Programs that attach to kprobes, tracepoints, raw tracepoints, fentry/fexit,
+/// and perf events.
+///
+/// They provide, well... tracing capabilities, and you're not supposed to use
+/// them to change how the kernel behaves when one of these events is triggered
+/// (but you can do it, somewhat).
+///
+/// #### Kprobes and Kretprobes
+///
+/// Can be used almost anywhere, except in what's listed at:
+/// `/sys/kernel/debug/kprobes/blacklist`
+///
+/// Funny note: looking into this file we can see some of the memory functions
+/// listed, such as `memset`, `memcpy`, etc, so looks like we can't mess around
+/// with those, which would be a big security risk (if we could).
+///
+/// Kprobes are usually attached to the entry of a function, while Kretprobes
+/// are attached to the exit. This is not a rule because you can change the
+/// offset of a instruction, so you could attach a Kprobe to the exit (why would
+/// you do this though, as you basically lose compatibility guarantee between
+/// kernels, again).
+///
+/// If the compiler inlined a kernel function that you wanted to attach a Kprobe
+/// to, you're out of luck, there won't be an entry point to attach to.
 SEC("tracepoint/syscalls/sys_enter_execve")
 int hello(void *ctx) {
   char msg[] = "Hello, World!";
