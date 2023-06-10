@@ -89,8 +89,17 @@ const char DEFAULT_MESSAGE[32] = "Default message";
 /// - `pathname`: argument to `execve`, it's the path of the program that's
 ///  going to be executed.
 ///
+/// Keep in mind that it's also possible to ignore arguments, for example
+/// the `do_execve` kernel function takes multiple parameters, but we can _name_
+/// only the 1st, and ignore the rest (behaves like how default/optional
+/// parameters usually can be ignored by order in programming languages).
+///
 /// We're not seeing the `void *ctx` argument here, but it is accessible
 /// from within the macro-ed function.
+///
+/// We could use `fentry` here, which is the modern equivalent of `ksyscall`.
+// SEC("fentry/execve")
+// int BPF_PROG(sample_program, const char *pathname) {
 SEC("ksyscall/execve")
 int BPF_KPROBE_SYSCALL(sample_program, const char *pathname) {
   Data data = {};
