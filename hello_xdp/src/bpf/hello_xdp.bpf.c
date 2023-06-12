@@ -42,6 +42,14 @@ __u32 counter = 0;
 ///
 /// Use `ip link` to see the attached program + it's id on the network interface
 /// we selected.
+///
+/// XDP return codes are:
+///
+/// - `XDP_PASS`: packet continues as normal in the network stack;
+/// - `XDP_DROP`: packet is discarded;
+/// - `XDP_TX`: sends the packet back out of the same interface it arrived;
+/// - `XDP_REDIRECT`: sends the packet to a different network iface;
+/// - `XDP_ABORTED`: discarded, with the semantics of this being an _error_;
 SEC("xdp")
 int sample(struct xdp_md *context) {
   bpf_printk("counter [%d]", counter);
