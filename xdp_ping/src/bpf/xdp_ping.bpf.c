@@ -39,6 +39,9 @@ u8 lookup_protocol(struct xdp_md *context) {
   //
   // Then we check if it's an IP packet.
   if (bpf_ntohs(eth->h_proto) == ETH_PROTOCOL_IP) {
+    // Pay attention here that to get the ip header, we start from position
+    // `data`, advance the eth header, and that's where we have the ip header
+    // struct.
     struct iphdr *iph = data + sizeof(struct ethhdr);
 
     // Let's check to see if this can be an ip header.
@@ -56,6 +59,15 @@ u8 lookup_protocol(struct xdp_md *context) {
       // 6  = TCP
       // 17 = UDP
       return iph->protocol;
+
+      // We could do more here than just read/analyze whatever is inside the
+      // packet.
+      //
+      // It's totally fine to modify stuff, so we could change the destination
+      // of this packet by messing with `iph->daddr` and `eth->h_dest` fields.
+      //
+      // Warning: If you change values of an ip header, remember to also update
+      // the ip header checksum with `iph->check = iph_csum(iph)`.
     }
   }
 
