@@ -1,4 +1,5 @@
 [workspace]
+resolver = "2"
 
 members = [
 	"query-bpf",
@@ -8,7 +9,8 @@ members = [
 	"hello_tail_call",
 	"hello_xdp",
 	"more_maps",
-	"xdp_ping"
+	"xdp_ping",
+	"hello_traffic_control"
 ]
 
 [workspace.dependencies]

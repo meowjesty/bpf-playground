@@ -7559,7 +7559,7 @@ struct netns_sysctl_ipv6 {
 	int seg6_flowlabel;
 	u32 ioam6_id;
 	u64 ioam6_id_wide;
-	bool skip_notify_on_dev_down;
+	int skip_notify_on_dev_down;
 	u8 fib_notify_on_flag_change;
 };
 
@@ -10253,6 +10253,7 @@ struct sock {
 	unsigned int sk_ll_usec;
 	unsigned int sk_napi_id;
 	int sk_rcvbuf;
+	int sk_wait_pending;
 	struct sk_filter *sk_filter;
 	union {
 		struct socket_wq *sk_wq;
@@ -12827,7 +12828,7 @@ struct pneigh_entry {
 	netdevice_tracker dev_tracker;
 	u32 flags;
 	u8 protocol;
-	u8 key[0];
+	u32 key[0];
 };
 
 struct neigh_hash_table {
@@ -46974,7 +46975,6 @@ struct strparser {
 };
 
 struct sk_psock_work_state {
-	struct sk_buff *skb;
 	u32 len;
 	u32 off;
 };
@@ -47007,7 +47007,7 @@ struct sk_psock {
 	struct proto *sk_proto;
 	struct mutex work_mutex;
 	struct sk_psock_work_state work_state;
-	struct work_struct work;
+	struct delayed_work work;
 	struct rcu_work rwork;
 };
 
@@ -91625,10 +91625,10 @@ enum tis_defaults {
 };
 
 enum tpm_tis_flags {
-	TPM_TIS_ITPM_WORKAROUND = 1,
-	TPM_TIS_INVALID_STATUS = 2,
-	TPM_TIS_DEFAULT_CANCELLATION = 4,
-	TPM_TIS_IRQ_TESTED = 8,
+	TPM_TIS_ITPM_WORKAROUND = 0,
+	TPM_TIS_INVALID_STATUS = 1,
+	TPM_TIS_DEFAULT_CANCELLATION = 2,
+	TPM_TIS_IRQ_TESTED = 3,
 };
 
 struct tpm_tis_phy_ops;
@@ -114452,6 +114452,27 @@ enum skb_free_reason {
 	SKB_REASON_DROPPED = 1,
 };
 
+enum {
+	TCA_UNSPEC = 0,
+	TCA_KIND = 1,
+	TCA_OPTIONS = 2,
+	TCA_STATS = 3,
+	TCA_XSTATS = 4,
+	TCA_RATE = 5,
+	TCA_FCNT = 6,
+	TCA_STATS2 = 7,
+	TCA_STAB = 8,
+	TCA_PAD = 9,
+	TCA_DUMP_INVISIBLE = 10,
+	TCA_CHAIN = 11,
+	TCA_HW_OFFLOAD = 12,
+	TCA_INGRESS_BLOCK = 13,
+	TCA_EGRESS_BLOCK = 14,
+	TCA_DUMP_FLAGS = 15,
+	TCA_EXT_WARN_MSG = 16,
+	__TCA_MAX = 17,
+};
+
 struct vlan_hdr {
 	__be16 h_vlan_TCI;
 	__be16 h_vlan_encapsulated_proto;
@@ -118021,6 +118042,7 @@ struct tls_strparser {
 	u32 mark: 8;
 	u32 stopped: 1;
 	u32 copy_mode: 1;
+	u32 mixed_decrypted: 1;
 	u32 msg_ready: 1;
 	struct strp_msg stm;
 	struct sk_buff *anchor;
@@ -120347,27 +120369,6 @@ struct tc_ratespec {
 struct tc_prio_qopt {
 	int bands;
 	__u8 priomap[16];
-};
-
-enum {
-	TCA_UNSPEC = 0,
-	TCA_KIND = 1,
-	TCA_OPTIONS = 2,
-	TCA_STATS = 3,
-	TCA_XSTATS = 4,
-	TCA_RATE = 5,
-	TCA_FCNT = 6,
-	TCA_STATS2 = 7,
-	TCA_STAB = 8,
-	TCA_PAD = 9,
-	TCA_DUMP_INVISIBLE = 10,
-	TCA_CHAIN = 11,
-	TCA_HW_OFFLOAD = 12,
-	TCA_INGRESS_BLOCK = 13,
-	TCA_EGRESS_BLOCK = 14,
-	TCA_DUMP_FLAGS = 15,
-	TCA_EXT_WARN_MSG = 16,
-	__TCA_MAX = 17,
 };
 
 struct skb_array {
@@ -131132,7 +131133,6 @@ struct mptcp_sock {
 	u8 nodelay: 1;
 	u8 fastopening: 1;
 	u8 in_accept_queue: 1;
-	int connect_flags;
 	struct work_struct work;
 	struct sk_buff *ooo_last_skb;
 	struct rb_root out_of_order_queue;

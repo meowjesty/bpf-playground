@@ -76,7 +76,15 @@ u8 lookup_protocol(struct xdp_md *context) {
 
 /// Prints `"PING"` after a `ping {address}` command is started on the attached
 /// network interface (`enp5s0` in my case).
-SEC("xdp") int sample_program(struct xdp_md *context) {
+///
+/// Some network cards support full (or partial) XPD offloading, thus this
+/// program could be actually running on the network card processor itself,
+/// meaning we don't impact the user's CPU.
+///
+/// All of this is possible due to how an XDP hook happens before the network
+/// data reaches the network stack.
+SEC("xdp")
+int sample_program(struct xdp_md *context) {
   u8 protocol = lookup_protocol(context);
 
   if (ICMP == protocol) {
