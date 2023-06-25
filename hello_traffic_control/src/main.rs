@@ -87,6 +87,14 @@ fn tc_ping_reply(
 /// `ingress`.
 ///
 /// p.s.: don't ask me why I know this.
+///
+/// When running this sample we're getting this warning:
+///
+/// `libbpf: Kernel error message: Exclusivity flag on, cannot modify`
+///
+/// Apparently it's harmless? Could only find 1 resource about it:
+///
+/// https://www.spinics.net/lists/bpf/msg44842.html
 fn sample() {
     let builder = HelloTrafficControlSkelBuilder::default();
     let open = builder.open().unwrap();
