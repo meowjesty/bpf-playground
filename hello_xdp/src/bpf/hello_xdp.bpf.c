@@ -6,6 +6,10 @@ https://github.com/iovisor/bpf-docs/blob/master/eBPF.md
 https://docs.kernel.org/bpf/instruction-set.html
 
 https://github.com/ebpffoundation/ebpf-docs
+
+A tutorial to dive deeper into xdp:
+
+https://github.com/xdp-project/xdp-tutorial
  */
 //!
 //! You can check if the BPF program is JIT with

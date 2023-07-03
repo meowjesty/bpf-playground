@@ -158,6 +158,9 @@ char LICENSE[] = "Dual BSD/GPL";
 /// depends on system arch, lib version (if the lib is even installed), and the
 /// path might differ in general (especially for containers).
 ///
+/// An example attaching uprobe and uretprob to OpenSSL can be found at
+/// [ebpf-openssl-tracing](https://blog.px.dev/ebpf-openssl-tracing/).
+///
 /// #### LSM
 ///
 /// You can attach programs to the _Linux Security Module_ API with
