@@ -1,7 +1,13 @@
 #![feature(result_option_inspect)]
-use std::process::exit;
+use std::{
+    os::fd::{AsFd, AsRawFd},
+    process::exit,
+};
 
-use libbpf_rs::{MapFlags, PrintLevel};
+use libbpf_rs::{
+    skel::{OpenSkel, Skel, SkelBuilder},
+    MapFlags, PrintLevel,
+};
 use nix::unistd::Uid;
 
 mod hello_tail_call {
@@ -39,10 +45,25 @@ fn main() {
         .inspect_err(|fail| println!("Failed loading with {fail:#?}"))
         .unwrap();
 
-    let enter_execve_fd = skel.progs().enter_execve().fd().to_le_bytes();
-    let ignore_fn_fd = skel.progs().ignore_opcode().fd().to_le_bytes();
-    let timer_fn_fd = skel.progs().timer().fd().to_le_bytes();
-    let random_syscall_fn_fd = skel.progs().random_syscall().fd().to_le_bytes();
+    let enter_execve_fd = skel
+        .progs()
+        .enter_execve()
+        .as_fd()
+        .as_raw_fd()
+        .to_le_bytes();
+    let ignore_fn_fd = skel
+        .progs()
+        .ignore_opcode()
+        .as_fd()
+        .as_raw_fd()
+        .to_le_bytes();
+    let timer_fn_fd = skel.progs().timer().as_fd().as_raw_fd().to_le_bytes();
+    let random_syscall_fn_fd = skel
+        .progs()
+        .random_syscall()
+        .as_fd()
+        .as_raw_fd()
+        .to_le_bytes();
 
     println!("enter_execve_fd {enter_execve_fd:?}");
     println!("ignore_fn_fd {ignore_fn_fd:?}");

@@ -40,7 +40,10 @@
 //! Details can also be seen in the [kernel maps page](https://docs.kernel.org/bpf/maps.html).
 use std::{process::exit, thread::sleep, time::Duration};
 
-use libbpf_rs::{MapFlags, PrintLevel};
+use libbpf_rs::{
+    skel::{OpenSkel, Skel, SkelBuilder},
+    MapFlags, PrintLevel,
+};
 use nix::unistd::Uid;
 use plain::Plain;
 

@@ -1,6 +1,9 @@
 use std::{fmt::Debug, mem::size_of, process::exit, thread::sleep, time::Duration};
 
-use libbpf_rs::{PrintLevel, RingBufferBuilder};
+use libbpf_rs::{
+    skel::{OpenSkel, Skel, SkelBuilder},
+    PrintLevel, RingBufferBuilder,
+};
 use nix::unistd::Uid;
 
 mod hello_ring {
@@ -88,9 +91,10 @@ fn main() {
     // the one on the bpf program.
     //
     // I think that this is similar to how you initialize and interact with GPU buffers.
+    let maps = skel.maps();
     ring_buffer_builder
         .add(
-            skel.maps().output(),
+            maps.output(),
             // Callback that is called on `RingBuffer::poll`, which is our way of querying the
             // buffer for changes.
             //

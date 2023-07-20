@@ -1,7 +1,10 @@
 #![feature(result_option_inspect)]
 use std::process::exit;
 
-use libbpf_rs::PrintLevel;
+use libbpf_rs::{
+    skel::{OpenSkel, SkelBuilder},
+    PrintLevel,
+};
 use log::{debug, error, info, warn};
 use nix::{net::if_::if_nametoindex, unistd::Uid};
 

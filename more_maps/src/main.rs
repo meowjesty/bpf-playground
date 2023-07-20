@@ -2,7 +2,10 @@
 
 use core::mem::size_of;
 
-use libbpf_rs::{PrintLevel, RingBufferBuilder};
+use libbpf_rs::{
+    skel::{OpenSkel, Skel, SkelBuilder},
+    PrintLevel, RingBufferBuilder,
+};
 use log::{debug, error, info, warn};
 use nix::unistd::Uid;
 
@@ -46,8 +49,9 @@ fn sample() {
     skel.attach().unwrap();
 
     let mut buffer_builder = RingBufferBuilder::new();
+    let maps = skel.maps();
     buffer_builder
-        .add(skel.maps().global_buffer(), |bytes| {
+        .add(maps.global_buffer(), |bytes| {
             if bytes.len() >= size_of::<Data>() {
                 let data = Data::from_bytes(bytes);
                 log::debug!("Data arrived {data:#?}");

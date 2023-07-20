@@ -1,8 +1,14 @@
 #![feature(result_option_inspect)]
 
-use std::io;
+use std::{
+    io,
+    os::fd::{AsFd, BorrowedFd},
+};
 
-use libbpf_rs::{PrintLevel, TcHookBuilder, TC_INGRESS};
+use libbpf_rs::{
+    skel::{OpenSkel, SkelBuilder},
+    PrintLevel, TcHookBuilder, TC_INGRESS,
+};
 use log::{debug, error, info, warn};
 use nix::{net::if_::if_nametoindex, unistd::Uid};
 
@@ -30,12 +36,8 @@ fn tc_drop() {
 }
 
 #[allow(dead_code)]
-fn tc_drop_ping(
-    programs: &HelloTrafficControlProgs<'_>,
-    interface_index: i32,
-) -> libbpf_rs::TcHook {
-    let mut tc_drop_ping = TcHookBuilder::new()
-        .fd(programs.tc_drop_ping().fd())
+fn tc_drop_ping(program_fd: BorrowedFd<'_>, interface_index: i32) -> libbpf_rs::TcHook {
+    let mut tc_drop_ping = TcHookBuilder::new(program_fd)
         .ifindex(interface_index)
         .replace(true)
         .handle(2)
@@ -60,12 +62,8 @@ fn tc_drop_ping(
 }
 
 #[allow(dead_code)]
-fn tc_ping_reply(
-    programs: &HelloTrafficControlProgs<'_>,
-    interface_index: i32,
-) -> libbpf_rs::TcHook {
-    let mut tc_ping_reply = TcHookBuilder::new()
-        .fd(programs.tc_ping_reply().fd())
+fn tc_ping_reply(program_fd: BorrowedFd<'_>, interface_index: i32) -> libbpf_rs::TcHook {
+    let mut tc_ping_reply = TcHookBuilder::new(program_fd)
         .ifindex(interface_index)
         .replace(true)
         .handle(3)
@@ -106,8 +104,8 @@ fn sample() {
     let programs = skel.progs();
     let interface_index = if_nametoindex("enp5s0").unwrap() as i32;
 
-    // let mut tc_drop_ping = tc_drop_ping(&programs, interface_index);
-    let mut tc_ping_reply = tc_ping_reply(&programs, interface_index);
+    // let mut tc_drop_ping = tc_drop_ping(programs.tcp_drop_ping().as_fd(), interface_index);
+    let mut tc_ping_reply = tc_ping_reply(programs.tc_ping_reply().as_fd(), interface_index);
 
     let mut quit_buffer = String::new();
     loop {
